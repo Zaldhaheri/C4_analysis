@@ -1,0 +1,95 @@
+1. What is the purpose of the next() function, and how does it contribute to the compilation process?
+next() is a lexer (tokenizer) for the c4 compiler. It gets the source code and reads it character by
+character, then it recognizes these characters and creates tokens with assigned token types such as
+identifiers, keywords, operators, numbers etc.
+
+During compilation: 
+- Token Identification: Differentiates between variables, keywords (if, while, return), numbers, and operators (+, -, *, ==, etc.).
+- Comment & Whitespace Handling: Skips comments (//, # preprocessor directives) and manages new lines correctly for debugging.
+- Identifier Hashing: Computes a hash value for identifiers, enabling efficient lookup in the symbol table.
+- Literal Processing: Converts numeric literals (decimal, octal, hexadecimal) and string/character literals into their proper internal representation.
+By transforming raw source code into structured tokens, next() provides the parser (expr(), stmt()) with meaningful data for syntax analysis and code generation.
+
+
+
+2. How does C4 handle symbol resolution (e.g., variables, functions)?
+C4 uses a simple symbol table (sym), which acts as a lookup table for variables and functions.
+This table stores information about identifiers, including:
+
+- Hash Values: Used to quickly check if an identifier exists.
+- Names: Stores a pointer to the identifier name in the source code.
+- Class: Determines whether the identifier is a global variable, local variable, function, system call, or constant.
+- Type: Specifies if the identifier is int, char, or a pointer (PTR).
+- Value: Stores either the memory address (for variables) or the entry point (for functions).
+
+Symbol resolution process:
+1. During Tokenization (next())
+   - If the identifier is new, it is added to sym.
+   - If it already exists, the existing entry is retrieved.
+2. During Parsing (expr(), stmt())
+   - The compiler determines if the identifier refers to a function, variable, or constant.
+   - If it's a function:
+     - A system call (Sys) or a user-defined function (Fun).
+   - If it's a variable:
+     - Global Variables (Glo) → Stored in the data section.
+     - Local Variables (Loc) → Stored in the stack (accessed via LEA).
+     - Constants (Num) → Directly embedded into the instruction stream.
+Limitations:
+C4 lacks advanced name resolution features such as structs, namespaces, function overloading, and more sophisticated scope handling beyond global/local.
+
+
+
+3. What are the limitations of C4 as a compiler? What features of C does it not support?
+C4 is a minimalist compiler designed for simplicity. As a result, it omits many standard C features.
+
+Key Limitations:
+- No Preprocessor Support:
+  - Does not support #define, #include, #ifdef, or macros.
+- Limited Data Types:
+  - Supports only char, int, and pointers (PTR).
+  - No float, double, struct, union, or advanced enum support.
+- No Standard Library:
+  - Does not include stdlib.h, stdio.h, or math.h.
+  - Only provides a few built-in system calls (printf, malloc, open, read, etc.).
+- Weak Type Checking:
+  - No strict type enforcement (e.g., mixing char and int without warnings).
+  - Unsafe pointer arithmetic without safeguards.
+- No Function Overloading or Advanced Syntax:
+  - Cannot define multiple functions with the same name but different parameters.
+  - No support for static, extern, volatile, or const.
+- Simplified Control Flow:
+  - Supports only if, while, and return.
+  - Lacks switch-case, for loops, and do-while.
+- Basic Error Handling:
+  - Compilation errors are printed, but lack detailed debugging information.
+
+Despite these limitations, C4 is useful for educational purposes and self-hosting, demonstrating how compilers work at a fundamental level.
+
+
+
+4. How does C4 achieve self-hosting (i.e., compiling itself)? What are the implications of this design?
+C4 is self-hosting, meaning it can compile its own source code (c4.c). This is possible because:
+
+- The compiler is small and fits within its own constraints.
+- It avoids complex C features that would require an advanced compiler.
+- It directly generates bytecode for its own virtual machine (VM) instead of relying on an external compiler.
+
+Steps to Self-Hosting:
+1. Compile C4 with an existing C compiler (gcc, clang).
+   - Produces an executable (c4.out).
+2. Run the compiled C4 compiler.
+   - This allows it to process its own c4.c file.
+3. C4 compiles itself into bytecode.
+   - The tokenization (next()), parsing (expr(), stmt()), and instruction generation all happen within C4.
+4. C4 executes the newly compiled version of itself.
+   - This verifies that the compiler is correctly producing its own working version.
+
+Implications of Self-Hosting:
+- Bootstrapping Simplicity:
+  - Because it only supports a small subset of C, it can recompile itself without external dependencies.
+- Portability:
+  - The compiled C4 binary can run on multiple systems without modification, as long as its VM is implemented correctly.
+- Performance Constraints:
+  - Since C4 does not optimize and generates bytecode instead of native machine code, it runs much slower than compilers like GCC.
+- Educational Value:
+  - Serves as an excellent learning tool for understanding how compilers work, as it demonstrates tokenization, parsing, code generation, and execution in a minimalist but functional way.
