@@ -1,0 +1,54 @@
+Modification: Implementing Bitwise NOT (~) in C4
+
+Overview
+The original C4 compiler lacks support for the **bitwise NOT (~) operator**, meaning any expression using `~x` would result in a syntax error. 
+This update adds proper handling for `~`, ensuring that it correctly **inverts all bits** of an integer, just like in standard C.
+
+Recognizing `~` as a Valid Token  
+The lexer (inside `next()`) needs to **identify `~`** and classify it correctly:
+
+else if (tk == '~') { tk = Xor; return; }  // Mark as XOR operation
+
+Updating `expr()` to Handle `~`  
+Inside `expr()`, `~` should be processed similarly to **other unary operators** like `!` and `-`. 
+Add the following **before handling binary operators**:
+
+else if (tk == '~') { 
+    next(); 
+    expr(Inc);  // Evaluate the operand
+    *++e = PSH; // Push operand to stack
+    *++e = IMM; 
+    *++e = -1;   // Load -1 onto the stack
+    *++e = XOR;  // Perform XOR with -1 (bitwise NOT)
+    ty = INT;    // Result remains an integer
+}
+
+Behavior Before and After the Change
+
+Before:
+- Writing `~x;` **causes a compilation error** because the compiler does not recognize `~`.
+- The parser fails to interpret it as a valid operation.
+
+After:
+- `C4` correctly **parses and executes** bitwise NOT operations.
+- Internally, `~x` is translated into **`x ^ -1`**, flipping all bits as expected.
+
+Example Usage  
+A simple program to **test bitwise NOT**:
+
+int main() {
+    int x = 5;
+    printf("%d", ~x);  // Should print -6 (since ~5 = -6 in two’s complement)
+    return 0;
+}
+
+Bytecode Output for `~x`
+When compiling `~x`, the updated C4 **emits these instructions**:
+
+PSH x    // Push 'x' onto the stack
+IMM -1   // Push -1 onto the stack
+XOR      // Perform 'x ^ -1' (bitwise NOT)
+
+Summary
+With this **small but important change**, the C4 compiler **now fully supports** bitwise NOT (`~`). 
+The implementation follows the same logic as standard C compilers, ensuring correct behavior in **all integer expressions**.

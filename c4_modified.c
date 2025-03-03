@@ -127,7 +127,8 @@ void next()
     else if (tk == '*') { tk = Mul; return; }
     else if (tk == '[') { tk = Brak; return; }
     else if (tk == '?') { tk = Cond; return; }
-    else if (tk == '~' || tk == ';' || tk == '{' || tk == '}' || tk == '(' || tk == ')' || tk == ']' || tk == ',' || tk == ':') return;
+    else if (tk == '~') { tk = Xor; return; } //modified code here
+    else if (tk == ';' || tk == '{' || tk == '}' || tk == '(' || tk == ')' || tk == ']' || tk == ',' || tk == ':') return;
   }
 }
 
@@ -190,6 +191,16 @@ void expr(int lev)
     if (ty > INT) ty = ty - PTR; else { printf("%d: bad dereference\n", line); exit(-1); }
     *++e = (ty == CHAR) ? LC : LI;
   }
+  //modified code
+  else if (tk == '~') { 
+    next(); 
+    expr(Inc);  // Parse the operand
+    *++e = PSH; 
+    *++e = IMM; 
+    *++e = -1;   // Load -1 onto the stack
+    *++e = XOR;  // Perform bitwise NOT (XOR with -1)
+    ty = INT;    // Result is an integer
+}
   else if (tk == And) {
     next(); expr(Inc);
     if (*e == LC || *e == LI) --e; else { printf("%d: bad address-of\n", line); exit(-1); }
